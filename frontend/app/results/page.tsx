@@ -10,6 +10,7 @@ export default function Results() {
 
   let parsedResult
   try {
+    console.log('Result data:', resultData)
     parsedResult = resultData ? JSON.parse(decodeURIComponent(resultData)) : null
   } catch (error) {
     console.error('Error parsing result:', error)

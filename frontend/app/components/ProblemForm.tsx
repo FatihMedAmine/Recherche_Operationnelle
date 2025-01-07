@@ -50,27 +50,46 @@ const ProblemForm: React.FC<ProblemFormProps> = ({ onSubmit, isSubmitting = fals
     if (newNum >= 1 && newNum <= 10) {
       setNumVariables(newNum);
       setObjective(Array(newNum).fill('1'));
-      setConstraints(
-        constraints.map((c) => ({
-          ...c,
-          coefficients: Array(newNum).fill('1'),
-        }))
-      );
-    }
-  };
-
-  const handleConstraintChange = (newNum: number) => {
-    if (newNum >= 1 && newNum <= 10) {
-      setNumConstraints(newNum);
-      setConstraints(
-        Array(newNum).fill({
-          coefficients: Array(numVariables).fill('1'),
-          type: '<=',
-          rhs: '10',
+      
+      // Mettre à jour les coefficients des contraintes
+      setConstraints((prevConstraints) =>
+        prevConstraints.map((constraint) => {
+          const updatedCoefficients = constraint.coefficients.slice(0, newNum);
+          return {
+            ...constraint,
+            coefficients: [...updatedCoefficients, ...Array(newNum - updatedCoefficients.length).fill('1')]
+          };
         })
       );
     }
   };
+  
+
+  const handleConstraintChange = (newNum: number) => {
+    if (newNum >= 1 && newNum <= 10) {
+      setNumConstraints(newNum);
+      
+      setConstraints((prevConstraints) => {
+        if (newNum > prevConstraints.length) {
+          // Ajouter des contraintes si le nombre a augmenté
+          const newConstraints = [...prevConstraints];
+          for (let i = prevConstraints.length; i < newNum; i++) {
+            newConstraints.push({
+              coefficients: Array(numVariables).fill('1'),
+              type: '<=',
+              rhs: '10',
+            });
+          }
+          return newConstraints;
+        } else if (newNum < prevConstraints.length) {
+          // Supprimer les contraintes excédentaires
+          return prevConstraints.slice(0, newNum);
+        }
+        return prevConstraints;
+      });
+    }
+  };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">

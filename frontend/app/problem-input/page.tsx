@@ -50,6 +50,7 @@ export default function ProblemInput() {
     
     try {
       const result = await solveProblem(problemData)
+      console.log(result)
       router.push(`/results?data=${encodeURIComponent(JSON.stringify(result))}`)
     } catch (err) {
       setError('Le solveur a rencontré une difficulté avec les données fournies. Veuillez vérifier vos entrées et réessayer.')

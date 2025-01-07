@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api'  // Remplacez par l'URL de votre API Flask
+const API_BASE_URL = 'http://localhost:5000'  // Remplacez par l'URL de votre API Flask
 
 export async function solveProblem(problemData: any) {
   const response = await fetch(`${API_BASE_URL}/solve`, {
