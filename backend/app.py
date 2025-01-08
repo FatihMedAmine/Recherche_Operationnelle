@@ -11,7 +11,7 @@ def solve_problem():
     try:
         data = request.json
 
-        # retrieve the data from the request
+        # Retrieve the data from the request
         method = data.get('method')
         num_variables = data.get('numVariables')
         num_constraints = data.get('numConstraints')
@@ -19,22 +19,29 @@ def solve_problem():
         objective_type = data.get('objectiveType')
         constraints = data.get('constraints', [])
 
+        # Validate input
+        if not method or not num_variables or not num_constraints or not objective or not constraints:
+            return jsonify({'status': 'error', 'message': 'Données incomplètes ou incorrectes'}), 400
 
         # Check if the method is simplex
         if method == 'simplexe':
-            solution = simplex_method(num_variables, num_constraints, objective, objective_type, constraints)
-
-            return jsonify({
-                'status': 'success',
-                'message': 'Solution trouvée',
-                **solution
-            }), 200
-        
+            try:
+                solution = simplex_method(num_variables, num_constraints, objective, objective_type, constraints)
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Solution trouvée',
+                    **solution
+                }), 200
+            except ValueError as ve:
+                return jsonify({'status': 'error', 'message': str(ve)}), 400
+            except Exception as e:
+                return jsonify({'status': 'error', 'message': f'Erreur interne: {str(e)}'}), 500
         else:
-            print('vous devez choisir une méthode et le completer')
+            return jsonify({'status': 'error', 'message': 'Méthode non supportée'}), 400
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

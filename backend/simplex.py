@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def simplex_method(num_variables, num_constraints, objective, objective_type, constraints):
     # Convert the objective function for maximization
     if objective_type == 'max':
@@ -7,18 +8,26 @@ def simplex_method(num_variables, num_constraints, objective, objective_type, co
 
     # Initialize the tableau
     tableau = np.zeros((num_constraints + 1, num_variables + num_constraints + 1))
-    
+
     # Set the objective function in the tableau
     tableau[0, :num_variables] = objective
-    
+
     # Set the constraints in the tableau
     for i in range(num_constraints):
         tableau[i + 1, :num_variables] = constraints[i]['coefficients']
         tableau[i + 1, -1] = constraints[i]['rhs']
         if constraints[i]['type'] == '<=':
-            tableau[i + 1, num_variables + i] = 1
+            tableau[i + 1, num_variables + i] = 1  # Slack variable
         elif constraints[i]['type'] == '>=':
-            tableau[i + 1, num_variables + i] = -1
+            tableau[i + 1, num_variables + i] = -1  # Surplus variable
+            # Handle artificial variable requirement
+            tableau = np.hstack((tableau, np.zeros((tableau.shape[0], 1))))
+            tableau[i + 1, -2] = 1
+
+    # Check feasibility for >= constraints
+    for i in range(1, num_constraints + 1):
+        if tableau[i, -1] < 0:
+            raise ValueError("Solution initiale non faisable. Utilisez Big M ou la méthode à deux phases.")
 
     # Simplex algorithm
     def pivot(tableau):
@@ -26,6 +35,10 @@ def simplex_method(num_variables, num_constraints, objective, objective_type, co
         pivot_col = np.argmin(tableau[0, :-1])
         if tableau[0, pivot_col] >= 0:
             return False  # Optimal solution found
+
+        # Check for unboundedness
+        if all(tableau[1:, pivot_col] <= 0):
+            raise ValueError("Problème non borné")
 
         # Find the pivot row (minimum positive ratio of RHS to pivot column)
         ratios = tableau[1:, -1] / tableau[1:, pivot_col]
