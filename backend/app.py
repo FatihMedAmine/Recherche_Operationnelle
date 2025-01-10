@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify # type: ignore
 from flask_cors import CORS
+import numpy as np # type: ignore
+from BigM import simplex_big_m
 from simplex import simplex_method  # Import the simplex method
 
 app = Flask(__name__)
@@ -11,7 +13,7 @@ def solve_problem():
     try:
         data = request.json
 
-        # Retrieve the data from the request
+        # retrieve the data from the request
         method = data.get('method')
         num_variables = data.get('numVariables')
         num_constraints = data.get('numConstraints')
@@ -19,29 +21,29 @@ def solve_problem():
         objective_type = data.get('objectiveType')
         constraints = data.get('constraints', [])
 
-        # Validate input
-        if not method or not num_variables or not num_constraints or not objective or not constraints:
-            return jsonify({'status': 'error', 'message': 'Données incomplètes ou incorrectes'}), 400
 
         # Check if the method is simplex
         if method == 'simplexe':
-            try:
-                solution = simplex_method(num_variables, num_constraints, objective, objective_type, constraints)
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Solution trouvée',
-                    **solution
-                }), 200
-            except ValueError as ve:
-                return jsonify({'status': 'error', 'message': str(ve)}), 400
-            except Exception as e:
-                return jsonify({'status': 'error', 'message': f'Erreur interne: {str(e)}'}), 500
-        else:
-            return jsonify({'status': 'error', 'message': 'Méthode non supportée'}), 400
+            solution = simplex_method(num_variables, num_constraints, objective, objective_type, constraints)
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Solution trouvée',
+                **solution
+            }), 200
+        
+        # Dans votre route /solve, modifiez la partie big-m ainsi :
+        elif method == 'big-m':
+            solution = simplex_big_m(num_variables, num_constraints, objective, objective_type, constraints)
+    
+            return jsonify({
+                'status': 'success',
+                'message': 'Solution trouvée',
+                **solution
+            }), 200
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
