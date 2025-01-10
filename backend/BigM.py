@@ -17,8 +17,8 @@ def create_tableau(num_variables: int, num_constraints: int, objective: List[flo
     
     # Set up objective row (negative of coefficients for maximization)
     for i in range(num_variables):
-        tableau[0, i] = -objective[i]
-        
+        tableau[0, i] = -float(objective[i])
+    
     # Set up constraints
     slack_idx = num_variables
     artificial_idx = num_variables + num_slack
@@ -39,22 +39,27 @@ def create_tableau(num_variables: int, num_constraints: int, objective: List[flo
         elif constraint['type'] == '>=':
             tableau[i, slack_idx] = -1.0
             tableau[i, artificial_idx] = 1.0
-            # Add M to objective row
             tableau[0, artificial_idx] = M
-            # Subtract M times constraint row from objective row
             tableau[0] -= M * tableau[i]
             slack_idx += 1
             artificial_idx += 1
             
         elif constraint['type'] == '=':
             tableau[i, artificial_idx] = 1.0
-            # Add M to objective row
             tableau[0, artificial_idx] = M
-            # Subtract M times constraint row from objective row
             tableau[0] -= M * tableau[i]
             artificial_idx += 1
     
     return tableau, num_slack, num_artificial
+
+def find_basis_variable(col):
+    """Helper function to find the basic variable in a column"""
+    nonzero_indices = np.nonzero(col)[0]
+    if len(nonzero_indices) == 1:
+        idx = nonzero_indices[0]
+        if abs(col[idx] - 1.0) < 1e-10:
+            return idx
+    return None
 
 def simplex_big_m(num_variables: int, num_constraints: int, objective: List[float], 
                   objective_type: str, constraints: List[Dict]) -> Dict:
@@ -63,7 +68,7 @@ def simplex_big_m(num_variables: int, num_constraints: int, objective: List[floa
     """
     # Convert minimization to maximization
     if objective_type == 'min':
-        objective = [-x for x in objective]
+        objective = [-float(x) for x in objective]
     
     # Create initial tableau
     tableau, num_slack, num_artificial = create_tableau(num_variables, num_constraints, 
@@ -109,25 +114,22 @@ def simplex_big_m(num_variables: int, num_constraints: int, objective: List[floa
                 factor = tableau[i, pivot_col]
                 tableau[i] -= factor * tableau[pivot_row]
     
-    # Extract solution
+    # Extract solution using basis variables
     solution = {}
     for j in range(num_variables):
-        col = tableau[:, j]
-        if np.count_nonzero(col) == 1:  # Basic variable
-            row_idx = np.nonzero(col)[0][0]
-            if abs(col[row_idx] - 1.0) < 1e-10:
-                solution[f'x{j+1}'] = tableau[row_idx, -1]
-            else:
-                solution[f'x{j+1}'] = 0.0
+        basis_row = find_basis_variable(tableau[:, j])
+        if basis_row is not None:
+            solution[f'x{j+1}'] = tableau[basis_row, -1]
         else:
             solution[f'x{j+1}'] = 0.0
     
-    optimal_value = -tableau[0, -1] if objective_type == 'max' else tableau[0, -1]
+    optimal_value = tableau[0, -1] if objective_type == 'min' else -tableau[0, -1]
     
     # Check for artificial variables in basis
     artificial_start = num_variables + num_slack
     for j in range(artificial_start, tableau.shape[1]-1):
-        if any(abs(tableau[i, j]) > 1e-10 for i in range(tableau.shape[0])):
+        basis_row = find_basis_variable(tableau[:, j])
+        if basis_row is not None and abs(tableau[basis_row, -1]) > 1e-10:
             return {
                 'optimal_solution': {},
                 'optimal_value': None,
