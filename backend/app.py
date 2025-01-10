@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify # type: ignore
 from flask_cors import CORS
+import numpy as np # type: ignore
+from BigM import simplex_big_m
 from simplex import simplex_method  # Import the simplex method
 
 app = Flask(__name__)
@@ -30,8 +32,15 @@ def solve_problem():
                 **solution
             }), 200
         
-        else:
-            print('vous devez choisir une méthode et le completer')
+        # Dans votre route /solve, modifiez la partie big-m ainsi :
+        elif method == 'big-m':
+            solution = simplex_big_m(num_variables, num_constraints, objective, objective_type, constraints)
+    
+            return jsonify({
+                'status': 'success',
+                'message': 'Solution trouvée',
+                **solution
+            }), 200
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
