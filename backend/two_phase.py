@@ -178,6 +178,6 @@ def format_result(result: Dict, num_variables: int, objective_type: str) -> Dict
     
     return {
         'optimal_solution': optimal_solution,
-        'optimal_value': optimal_value,
+        'optimal_value': -optimal_value,
         'iterations': [{'tableau': iter.tolist()} for iter in result['iterations']]
     }
