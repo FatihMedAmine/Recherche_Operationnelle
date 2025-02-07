@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowRight, Calculator, Clock, LineChart } from 'lucide-react';
 import Header from './components/Header';
 import Link from 'next/link';
